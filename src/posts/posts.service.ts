@@ -11,8 +11,40 @@ export class PostsService {
     return this.repository.create(createPostDto);
   }
 
-  findAll() {
-    return this.repository.findAll();
+  async findAll(query: {
+    page: number;
+    limit: number;
+    id?: string;
+    title: string;
+    content: string;
+  }) {
+    const { page = 1, limit = 10, id, title, content } = query;
+
+    let filteredPosts = await this.repository.findAll();
+
+    filteredPosts = filteredPosts.filter((post) => {
+      const matchesId = id ? post.id.includes(id) : true;
+      const matchesTitle = title
+        ? post.title.toLowerCase().includes(title.toLowerCase())
+        : true;
+      const matchesContent = content
+        ? post.content.toLowerCase().includes(content.toLowerCase())
+        : true;
+
+      return matchesId && matchesTitle && matchesContent;
+    });
+
+    const total = filteredPosts.length;
+
+    const startIndex = (page - 1) * limit;
+    const paginatedPosts = filteredPosts.slice(startIndex, startIndex + limit);
+
+    return {
+      total,
+      page,
+      limit,
+      data: paginatedPosts,
+    };
   }
 
   findOne(id: string) {
